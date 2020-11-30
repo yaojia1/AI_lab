@@ -1,6 +1,6 @@
 OPEN_list=[]
 CLOSE_list=[]
-success_shape=[0,1,2,3,4,5,6,7,8]
+success_shape=[1,2,3,8,0,4,7,6,5]
 Main_deep=50
 
 class tree_Node(object):
@@ -71,7 +71,7 @@ class tree_Node(object):
         :param num:一次添加几个
         :return:
         '''
-        print("parent node:")
+        print("---------------------------------------\nparent node:")
         self.show_node()
         num=3
         for move_x in range(-1, 2):
@@ -154,6 +154,7 @@ class BinaryIndexTree(object):
                 if search_type == "deep":
                     if self.deep_search(node):
                         self.sucess_build(node)
+                        print("open 长度", len(OPEN_list), "close 长度：", len(CLOSE_list))
                         break
                     else:
                         node = OPEN_list[0]
@@ -165,7 +166,8 @@ class BinaryIndexTree(object):
                     else:
                         node = OPEN_list[0]
                         continue
-            print(self.success_path)
+            print("success path:")
+            self.show_success()
             '''判断open不为空'''
             '''选第一个node进入特定搜索函数'''
             '''判断是否在close中，
@@ -207,9 +209,10 @@ class BinaryIndexTree(object):
                         continue
                     if self.inclose(item):
                         print("in close")
+                        continue
                     OPEN_list.append(item)
         print("open长度",len(OPEN_list))
-        #self.show_open()
+        self.show_open()
         return False
 
     def inclose(self,node:tree_Node):
@@ -228,40 +231,63 @@ class BinaryIndexTree(object):
         return False
 
     def deep_search(self,node:tree_Node):
-        if node.success != False:
-            #self.success_path.append(node)
+        if node.success == True:
+            # self.success_path.append(node)
             return True
         else:
             if self.inclose(node):
+                print("in close")
+                del OPEN_list[0]
                 return False
+
             if node.add_child():
                 self.success_path.append(node.success_child)
-                #self.success_path.insert(0, node)
+                # self.success_path.insert(0,node)
                 return True
             else:
                 CLOSE_list.append(node)
                 del OPEN_list[0]
-                OPEN_list.extend(node.child_list)
-                print("open 表：")
-                self.show_open()
-
-
+                i=0
+                for item in node.child_list:
+                    if self.inopen(item):
+                        print("in open")
+                        continue
+                    if self.inclose(item):
+                        print("in close")
+                        continue
+                    OPEN_list.insert(i,item)
+                    i+=1
+        print("open长度", len(OPEN_list))
+        self.show_open()
         return False
 
+    def can_solve(self):
+        '''
+        TODO 判断由初始矩阵转目标矩阵是否有解
+        如何判断是否有解我在网上找了下，是判断初始矩阵的状态字符串的逆序数与目标矩阵的状态字符串的逆序数是否同奇或者同偶，如果同是奇数或同是偶数就有解。否者无解。
+        :return:
+        '''
 
     def A_star(self,node:tree_Node):
-        if node.success == True:
+        if node.success==True:
             #self.success_path.append(node)
             return True
         else:
-            if self.inclose(node):
-                '''
-                TODO 计算f值比较大小，修改parent,i-1是close中的位置
-                '''
+            pos=self.inclose(node)
+            if pos:
+                '''计算f值比较大小，修改parent,i-1是close中的位置'''
+                f_new=node.diff+node.deep
+                f_old=CLOSE_list[pos-1].diff+CLOSE_list[pos-1].deep
+                print("in close")
+                if f_new<=f_old:
+                    CLOSE_list[pos - 1].parent_node=node.parent_node
+                    print("chang parent")
+                del OPEN_list[0]
                 return False
+
             if node.add_child():
                 self.success_path.append(node.success_child)
-                #self.success_path.insert(0, node)
+                #self.success_path.insert(0,node)
                 return True
             else:
                 '''
@@ -269,10 +295,18 @@ class BinaryIndexTree(object):
                 '''
                 CLOSE_list.append(node)
                 del OPEN_list[0]
-                OPEN_list[0:0] = node.child_list
-
-
+                for item in node.child_list:
+                    if self.inopen(item):
+                        print("in open")
+                        continue
+                    if self.inclose(item):
+                        print("in close")
+                        continue
+                    OPEN_list.append(item)
+        print("open长度",len(OPEN_list))
+        #self.show_open()
         return False
+
 
     def show_close(self):
         for node in CLOSE_list:
@@ -280,6 +314,10 @@ class BinaryIndexTree(object):
 
     def show_open(self):
         for node in OPEN_list:
+            node.show_node()
+
+    def show_success(self):
+        for node in self.success_path:
             node.show_node()
     '''
     
@@ -290,6 +328,11 @@ class BinaryIndexTree(object):
 
 ss=BinaryIndexTree([2,0,3,1,8,4,7,6,5],1,0)
 ss.main_search("broad")
+print("*****************deep*************************")
+ss1=BinaryIndexTree([2,0,3,1,8,4,7,6,5],1,0)
+ss1.main_search("deep")
+ss2=BinaryIndexTree([2,8,3,1,6,4,0,7,5],0,2)
+#ss2.main_search("broad")
 
 bb= [123, 321, 654, 456,1,2,3]
 cc=[123,321,654,456]
