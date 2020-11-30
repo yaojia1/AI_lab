@@ -2,12 +2,15 @@ OPEN_list=[]
 CLOSE_list=[]
 success_shape=[1,2,3,8,0,4,7,6,5]
 Main_deep=50
-
+code_format=int(len(success_shape)**0.5)
+print(code_format)
 class tree_Node(object):
     def __init__(self, initlist, node=None, x_move=0, y_move=0, x_init=0, y_init=0):
+
         self.child_list = []
         self.child_num = []  # 里面是child的移动方向list
         self.success_child=None
+
         if node is None:
             '''是根节点'''
             self.parent_node = None
@@ -15,9 +18,9 @@ class tree_Node(object):
             self.pos = [x_init, y_init]
             self.deep=0
             print("root node generating...")
-            print(self.shape[0:3])
-            print(self.shape[3:6])
-            print(self.shape[6:9])
+            for le in  range(code_format):
+                print(self.shape[le*code_format:le*code_format+code_format])
+
         else:
             self.parent_node = node
             self.deep = node.deep +1   # 节点深度
@@ -25,30 +28,30 @@ class tree_Node(object):
             self.shape = initlist[:]
             self.pos = [pos_ini[0] + x_move, pos_ini[1] + y_move]
             print(pos_ini,"-->",self.pos," 方向：",[x_move,y_move])
-            print(self.shape[0:3])
-            print(self.shape[3:6])
-            print(self.shape[6:9])
+
 
         self.parent_move = [x_move, y_move]  # 父节点的移动方向，用于搜索时排除父节点
         self.cate = OPEN_list
         self.status = False  # 有无被搜索过
         '''child数量等于3则表示添加了所有子节点，标true'''
-        if self.shape==success_shape:
-            self.success = True
-        else:self.success=False
         self.diff=0
-        for i in range(9):
+        self.huff_n = 0
+        sh = len(success_shape)
+        for i in range(sh):
             if self.shape[i]!=success_shape[i]:
                 self.diff+=1
-        if self.diff==0:
-            self.success=True
+            huf1 = success_shape.index(self.shape[i])
+            self.huff_n += (abs(huf1 // code_format - i // code_format) + abs(huf1 % code_format - i % code_format))
+        if self.diff == 0:
+            self.success = True
+        else:self.success = False
+        self.f_value=self.deep+self.huff_n
         # self.step=0单开一个计算
 
     def show_node(self):
-        print("deep:",self.deep," diff:",self.diff)
-        print(self.shape[0:3])
-        print(self.shape[3:6])
-        print(self.shape[6:9])
+        print("F value:",self.f_value," |deep:",self.deep," huff:",self.huff_n)
+        for le in range(code_format):
+            print(self.shape[le * code_format:le * code_format + code_format])
 
     def move_node(self, x_move, y_move):
         '''
@@ -59,8 +62,8 @@ class tree_Node(object):
         '''
         shape0 = self.shape[:]
         pos1 = [self.pos[0] + x_move, self.pos[1] + y_move]  # 目标位置
-        shape0[self.pos[1] * 3 + self.pos[0]] = shape0[pos1[1] * 3 + pos1[0]]
-        shape0[pos1[1] * 3 + pos1[0]] = 0
+        shape0[self.pos[1] * code_format + self.pos[0]] = shape0[pos1[1] * code_format + pos1[0]]
+        shape0[pos1[1] * code_format + pos1[0]] = 0
         return shape0
 
     def add_child(self):  #
@@ -85,7 +88,7 @@ class tree_Node(object):
                 if abs(move_x + move_y) == 1 \
                         and abs(move_x + self.parent_move[0]) + abs(move_y + self.parent_move[1]) \
                         and [move_x, move_y] not in self.child_num \
-                        and 2>=move_x + self.pos[0] >= 0 and 2>=move_y + self.pos[1] >= 0:
+                        and code_format>move_x + self.pos[0] >= 0 and code_format>move_y + self.pos[1] >= 0:
                     shape_child = self.move_node(move_x, move_y)
                     print("child:",shape_child)
                     self.child_num.append([move_x, move_y])
@@ -111,6 +114,14 @@ class tree_Node(object):
             return True
         else:return False
 
+    def huff(self):
+        self.huff_n=0
+        sh=len(success_shape)
+        for i in range(sh):
+            huf1=success_shape.index(self.shape[i])
+            self.huff_n+=(abs(huf1//code_format - i//code_format)+abs(huf1%code_format - i%code_format))
+        return self.huff_n
+
 
 
 class BinaryIndexTree(object):
@@ -119,11 +130,11 @@ class BinaryIndexTree(object):
     TODO 子节点加到open的前面还是后面还是排序在加
     TODO show函数：清屏，显示九宫格数字，每添加一个节点show一次，下方提示深度等和是否成功
     '''
+    linklist=[]
     def __init__(self, initlist,x,y):
         '''初始化树'''
         self.success_path = []
         self.init_map = initlist
-        self.end_map=[0,1,2,3,4,5,6,7,8]
         OPEN_list=[]
         CLOSE_list=[]
         self.root_node=tree_Node(self.init_map)
@@ -165,7 +176,9 @@ class BinaryIndexTree(object):
                         break
                     else:
                         node = OPEN_list[0]
+                        print("open 长度", len(OPEN_list), "close 长度：", len(CLOSE_list))
                         continue
+            print("open 长度", len(OPEN_list), "close 长度：", len(CLOSE_list))
             print("success path:")
             self.show_success()
             '''判断open不为空'''
@@ -215,6 +228,87 @@ class BinaryIndexTree(object):
         self.show_open()
         return False
 
+
+    def deep_search(self,node:tree_Node):
+        if node.success == True:
+            # self.success_path.append(node)
+            return True
+        else:
+            if self.inclose(node):
+                print("in close")
+                del OPEN_list[0]
+                return False
+
+            if node.add_child():
+                self.success_path.append(node.success_child)
+                # self.success_path.insert(0,node)
+                print("成功")
+                return True
+            else:
+                CLOSE_list.append(node)
+                del OPEN_list[0]
+                i=0
+                for item in node.child_list:
+                    if self.inopen(item):
+                        print("in open")
+                        continue
+                    if self.inclose(item):
+                        print("in close")
+                        continue
+                    OPEN_list.insert(i,item)
+                    node.show_node()
+                    i+=1
+        print("open长度", len(OPEN_list))
+        self.show_open()
+        return False
+
+    def A_star(self,node:tree_Node):
+        if node.success==True:
+            #self.success_path.append(node)
+            return True
+        else:
+            pos=self.inclose(node)
+            if pos:
+                '''计算f值比较大小，修改parent,i-1是close中的位置'''
+                f_new=node.f_value
+                f_old=CLOSE_list[pos-1].f_value
+                print("in close")
+                if f_new<=f_old:
+                    CLOSE_list[pos - 1].parent_node=node.parent_node
+                    print("change parent")
+                del OPEN_list[0]
+                return False
+
+            if node.add_child():
+                self.success_path.append(node.success_child)
+                #self.success_path.insert(0,node)
+                return True
+            else:
+                '''
+                TODO child 计算f，排序
+                '''
+                CLOSE_list.append(node)
+                del OPEN_list[0]
+                childlist=[]
+                for item in node.child_list:
+                    if self.inopen(item):
+                        print("in open")
+                        continue
+                    if self.inclose(item):
+                        print("in close")
+                        continue
+                    ch_pos=0
+                    for chs in OPEN_list:
+                        if item.f_value>chs.f_value:
+                            ch_pos+=1
+                        else:break
+                    OPEN_list.insert(ch_pos,item)
+
+
+        print("open长度",len(OPEN_list),"子节点数量：",len(node.child_list))
+        #self.show_open()
+        return False
+
     def inclose(self,node:tree_Node):
         i=1
         for nodes in CLOSE_list:
@@ -230,37 +324,6 @@ class BinaryIndexTree(object):
             i+=1
         return False
 
-    def deep_search(self,node:tree_Node):
-        if node.success == True:
-            # self.success_path.append(node)
-            return True
-        else:
-            if self.inclose(node):
-                print("in close")
-                del OPEN_list[0]
-                return False
-
-            if node.add_child():
-                self.success_path.append(node.success_child)
-                # self.success_path.insert(0,node)
-                return True
-            else:
-                CLOSE_list.append(node)
-                del OPEN_list[0]
-                i=0
-                for item in node.child_list:
-                    if self.inopen(item):
-                        print("in open")
-                        continue
-                    if self.inclose(item):
-                        print("in close")
-                        continue
-                    OPEN_list.insert(i,item)
-                    i+=1
-        print("open长度", len(OPEN_list))
-        self.show_open()
-        return False
-
     def can_solve(self):
         '''
         TODO 判断由初始矩阵转目标矩阵是否有解
@@ -268,44 +331,7 @@ class BinaryIndexTree(object):
         :return:
         '''
 
-    def A_star(self,node:tree_Node):
-        if node.success==True:
-            #self.success_path.append(node)
-            return True
-        else:
-            pos=self.inclose(node)
-            if pos:
-                '''计算f值比较大小，修改parent,i-1是close中的位置'''
-                f_new=node.diff+node.deep
-                f_old=CLOSE_list[pos-1].diff+CLOSE_list[pos-1].deep
-                print("in close")
-                if f_new<=f_old:
-                    CLOSE_list[pos - 1].parent_node=node.parent_node
-                    print("chang parent")
-                del OPEN_list[0]
-                return False
 
-            if node.add_child():
-                self.success_path.append(node.success_child)
-                #self.success_path.insert(0,node)
-                return True
-            else:
-                '''
-                TODO child 计算f，排序
-                '''
-                CLOSE_list.append(node)
-                del OPEN_list[0]
-                for item in node.child_list:
-                    if self.inopen(item):
-                        print("in open")
-                        continue
-                    if self.inclose(item):
-                        print("in close")
-                        continue
-                    OPEN_list.append(item)
-        print("open长度",len(OPEN_list))
-        #self.show_open()
-        return False
 
 
     def show_close(self):
@@ -323,28 +349,49 @@ class BinaryIndexTree(object):
     
     '''
 
+init_map1=[2,0,3,1,8,4,7,6,5]
+init_map12=[2,3,0,1,8,4,7,6,5]
+init_map2=[2,8,3,1,6,4,0,7,5]
 
+init_map15=[1,2,3,0,5,6,7,4,9,10,11,8,13,14,15,12]
+success_shape=[1,2,3,4,5,6,7,8,9,10,11,12,0,13,14,15]
+code_format=int(len(success_shape)**0.5)
+xp=3
+yp=0
+ss3=BinaryIndexTree(init_map15,xp,yp)
+#ss33=BinaryIndexTree(init_map15,xp,yp)
+ss3.main_search("A")
+print("总长度：",len(ss3.success_path))
 
-
-ss=BinaryIndexTree([2,0,3,1,8,4,7,6,5],1,0)
-ss.main_search("broad")
-print("*****************deep*************************")
+'''
 ss1=BinaryIndexTree([2,0,3,1,8,4,7,6,5],1,0)
-ss1.main_search("deep")
+ss11=BinaryIndexTree([2,0,3,1,8,4,7,6,5],1,0)
+ss1.main_search("broad")
+ss11.main_search("deep")
+'''
+
+print("*****************deep*************************")
+'''
 ss2=BinaryIndexTree([2,8,3,1,6,4,0,7,5],0,2)
-#ss2.main_search("broad")
+#ss22=BinaryIndexTree([2,8,3,1,6,4,0,7,5],0,2)
+ss2.main_search("A")
+print("总长度：",len(ss2.success_path))
+#ss22.main_search("broad")'''
+'''
+init_map15=[11,9,4,15,1,3,0,12,7,5,8,6,13,2,10,14]
+success_shape=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0]
+code_format=int(len(success_shape)**0.5)
+xp=2
+yp=1
+ss3=BinaryIndexTree(init_map15,xp,yp)
+#ss33=BinaryIndexTree(init_map15,xp,yp)
+ss3.main_search("A")
+print("总长度：",len(ss3.success_path))
+#ss33.main_search("broad")
+'''
+print("*****************A_star*************************")
 
-bb= [123, 321, 654, 456,1,2,3]
-cc=[123,321,654,456]
+#
 
-print(abs(-1))
-print(bb==cc)
-a,b,c=1,2,3
-k,j,u=1,2,3
-print([a,b,c]==[k,j,u])
-print([k,j,u] in bb)
-bb.append([a,b,c])
-print([k,j,u] in bb)
-print([k,j,u] not in bb)
-for a in range(-1,2):
-    print(a)
+#print("总长度：",len(ss22.success_path))
+
