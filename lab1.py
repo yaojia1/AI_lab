@@ -155,7 +155,6 @@ class BinaryIndexTree(object):
         if search_type=="link":
             self.link_search()
         else:
-
             while len(OPEN_list):
                 #print("open:",OPEN_list)
                 #print(node.shape)
@@ -193,8 +192,8 @@ class BinaryIndexTree(object):
                         node = OPEN_list[0]
                         print("open 长度", len(OPEN_list), "close 长度：", len(CLOSE_list))
                         continue
-            print("open 长度", len(OPEN_list), "close 长度：", len(CLOSE_list))
-            #print("success path:")
+            #print("open 长度", len(OPEN_list), "close 长度：", len(CLOSE_list))
+            print("------------success path-----------------\n")
             self.show_success()
             '''判断open不为空'''
             '''选第一个node进入特定搜索函数'''
@@ -224,7 +223,7 @@ class BinaryIndexTree(object):
         po1 = self.root_node.pos[:]
         active_point.remove(po1)
         if len(active_point)==1:
-            print(active_point[0],po1)
+            #print(active_point[0],po1)
             if abs(po1[0]-active_point[0][0])+abs(po1[1]-active_point[0][1])==1:
                 self.map_new[po1[0]+po1[1]*code_format]=self.map_new[active_point[0][0]+active_point[0][1]*code_format]
                 self.map_new[active_point[0][0] + active_point[0][1] * code_format]=0
@@ -246,20 +245,20 @@ class BinaryIndexTree(object):
         po3 = [i % code_format, i // code_format]
         active_point.remove(po3)
         route_i=[po1, po2, po3]
-        print("route point",route_i)
+        #print("route point",route_i)
         cent=[(po1[0]+po2[0]+po3[0])/3,(po1[1]+po2[1]+po3[1])/3]
         route_2=[]
         num=0
 
         while num<3:
 
-            print("**********************************************\nactive point:" , active_point)
+            #print("**********************************************\nactive point:" , active_point)
 
             move_x=route_i[num%3][0]
             move_y = route_i[num % 3][1]
             route_2.append([move_x, move_y])
-            print("selected point",route_i)
-            print("route point:", route_2)
+            #print("selected point",route_i)
+            #print("route point:", route_2)
 
             toward_x = True
             x_length = route_i[(num + 1) % 3][0] - move_x
@@ -276,48 +275,59 @@ class BinaryIndexTree(object):
                     toward_x = False
             else: toward_x = False
 
-            while  move_x!=route_i[(num+1)%3][0] and move_y!=route_i[(num+1)%3][1]:
+            while  move_x!=route_i[(num+1)%3][0] or move_y!=route_i[(num+1)%3][1]:
                 '''三角形中心点'''
                 print("-------------------\nmoving point:", [move_x, move_y], "第", num % 3+1, "个route：", route_i[(num + 1) % 3],toward_x)
+
                 if toward_x :
                     if move_x==route_i[(num+1)%3][0]:
                         toward_x=False
                         continue
-                    po_new=[move_x+(route_i[(num+1)%3][0]>move_x),move_y]
+                    if route_i[(num+1)%3][0]>move_x:kk=1
+                    else:kk=-1
+                    po_new=[move_x+kk,move_y]
                     if po_new in active_point:
                         route_2.append(po_new)
                         active_point.remove(po_new)
-                        print("add x point" , po_new)
-                        move_x+=(route_i[(num+1)%3][0]>move_x)
+                        print("add x point" , [move_x,move_y] , po_new)
+                        move_x+=(kk)
                         continue
                     if po_new in self.fix_point and po_new not in route_2:
                         route_2.append(po_new)
                         #self.fix_point.remove(po_new)
                         print("add x fix point", po_new)
-                        move_x += (route_i[(num + 1) % 3][0] > move_x)
+                        move_x += kk
                         continue
                     if po_new==route_i[(num+1)%3]:
                         #route_2.append(po_new)
                         break
+                    print(po_new,"not in",active_point)
                 if move_y!=route_i[(num+1)%3][1]:
                     po_new = [move_x , move_y + (route_i[(num + 1) % 3][1] > move_y)]
+                    if route_i[(num + 1) % 3][1] > move_y:
+                        kk = 1
+                    else:
+                        kk = -1
                     if po_new in active_point:
                         route_2.append(po_new)
                         active_point.remove(po_new)
-                        move_y+=(route_i[(num + 1) % 3][1] > move_y)
+
+                        move_y+=kk
                         print("add y point", po_new)
                         continue
                     if po_new in self.fix_point and po_new not in route_2:
                         route_2.append(po_new)
                         #self.fix_point.remove(po_new)
-                        move_y+=(route_i[(num + 1) % 3][1] > move_y)
+                        move_y+=kk
                         print("add y fix point", po_new)
                         continue
                     if po_new==route_i[(num+1)%3]:
                         #route_2.append(po_new)
                         break
-
+                else:toward_x=True
                 ppp=0
+                if abs(route_i[(num + 1) % 3][0]-move_x)+abs(route_i[(num + 1) % 3][1]-move_y)==1:
+                    break
                 for point in active_point:
                     if abs(point[0]-move_x)+abs(point[1]-move_y)==1:
                         print("add ex point",[move_x,move_y],point)
@@ -341,9 +351,8 @@ class BinaryIndexTree(object):
                         print("route ", route_2)
                         print("active", active_point)
                         return False
-
-
-
+                print(route_2,move_x,move_y,route_i[(num+1)%3])
+                print(move_x,route_i[(num+1)%3][0] , move_y, route_i[(num+1)%3][1])
             num+=1
         '''数字换位置'''
         value_fix = route_2.index(po2)
@@ -386,7 +395,6 @@ class BinaryIndexTree(object):
                 self.fix_point.append([i%code_format,i//code_format])
             else:self.active_point_ini.append([i%code_format,i//code_format])
         while self.map_new!=success_shape and self.build_route():
-            print("@@@@@@@@@next point@@@@@@@@@@@@@@@@\n")
             for i in range(code_format):
                 print(self.map_new[i*code_format:(i+1)*code_format])
             self.fix_point=[]
@@ -399,7 +407,7 @@ class BinaryIndexTree(object):
         #print("success")
         for i in range(code_format):
             print(self.map_new[i * code_format:(i + 1) * code_format])
-        print("总route")
+        print("链接移动次数：",len(self.route),"\n移动路径：\n")
         for ro in self.route:
             print(ro)
 
@@ -580,6 +588,11 @@ while True:
             success_shape = [1, 2, 3, 8, 0, 4, 7, 6, 5]
             pos_x = 1
             pos_y = 2
+        elif x==16:
+            main_map = [11,9,4,15,1,3,0,12,7,5,8,6,13,2,10,14]
+            success_shape = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0]
+            pos_x = 2
+            pos_y = 1
         else:
             main_map = [1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12]
             success_shape = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,0]
