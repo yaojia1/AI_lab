@@ -123,6 +123,10 @@ class tree_Node(object):
         return self.huff_n
 
 
+#fix_point=[]
+#active_point_ini=[]
+#map_new=[]
+
 
 class BinaryIndexTree(object):
     '''
@@ -133,6 +137,8 @@ class BinaryIndexTree(object):
     linklist=[]
     def __init__(self, initlist,x,y):
         '''初始化树'''
+        self.map_new = []
+        self.route = []
         self.success_path = []
         self.init_map = initlist
         OPEN_list=[]
@@ -196,8 +202,149 @@ class BinaryIndexTree(object):
             self.success_path.insert(0,node.parent_node)
             node=node.parent_node
 
+    def build_route(self):
+        active_point=self.active_point_ini[:]
+        po1 = self.root_node.pos[:]
+        po2=active_point[0]
+        del active_point[0]
+        i=self.map_new.index(success_shape[po2[1]*code_format+po2[0]])
+        po3 = [i % code_format, i // code_format]
+        active_point.remove(po3)
+        route_i=[po1, po2, po3]
+        print("route point",route_i)
+        cent=[(po1[0]+po2[0]+po3[0])/3,(po1[1]+po2[1]+po3[1])/3]
+        route_2=[]
+        num=0
+
+        while num<3:
+
+            print("**********************************************\nactive point:" , active_point)
+
+            move_x=route_i[num%3][0]
+            move_y = route_i[num % 3][1]
+            route_2.append([move_x, move_y])
+            print("selected point",route_i)
+            print("route point:", route_2)
+
+            toward_x = True
+            x_length = route_i[(num + 1) % 3][0] - move_x
+            y_length = route_i[(num + 1) % 3][1] - move_y
+            if move_y < route_i[(num + 1) % 3][1]:
+                if y_length * (cent[0] - move_x) < cent[1] * x_length:
+                    toward_x = True
+                else:
+                    toward_x = False
+            elif move_y > route_i[(num + 1) % 3][1]:
+                if y_length * (cent[0] - move_x) < cent[1] * x_length:
+                    toward_x = False
+                else:
+                    toward_x = True
+            else: toward_x = True
+
+            while  move_x!=route_i[(num+1)%3][0] and move_y!=route_i[(num+1)%3][1]:
+                '''三角形中心点'''
+                print("moving point:", [move_x, move_y], "第", num % 3+1, "个route：", route_i[(num + 1) % 3],toward_x)
+                if toward_x :
+                    if move_x==route_i[(num+1)%3][0]:
+                        toward_x=False
+                        continue
+                    po_new=[move_x+(route_i[(num+1)%3][0]>move_x),move_y]
+                    if po_new in active_point:
+                        route_2.append(po_new)
+                        active_point.remove(po_new)
+                        move_x+=(route_i[(num+1)%3][0]>move_x)
+                        continue
+                    if po_new==route_i[(num+1)%3]:
+                        route_2.append(po_new)
+                        break
+                if move_y!=route_i[(num+1)%3][1]:
+                    po_new = [move_x , move_y + (route_i[(num + 1) % 3][1] > move_y)]
+                    if po_new in active_point:
+                        route_2.append(po_new)
+                        active_point.remove(po_new)
+                        move_y+=(route_i[(num + 1) % 3][1] > move_y)
+                        continue
+                    if po_new==route_i[(num+1)%3]:
+                        route_2.append(po_new)
+                        break
+
+                ppp=0
+                for point in active_point:
+                    if abs(point[0]-move_x)+abs(point[1]-move_y)==1:
+                        print("add point",[move_x,move_y],point)
+                        move_x,move_y=point[0],point[1]
+                        route_2.append(point[:])
+                        active_point.remove(point)
+                        ppp=1
+                        break
+                for point in self.fix_point:
+                    if abs(point[0]-move_x)+abs(point[1]-move_y)==1:
+                        print("add point",[move_x,move_y],point)
+                        move_x,move_y=point[0],point[1]
+                        route_2.append(point[:])
+                        self.fix_point.remove(point)
+                        ppp=1
+                        break
+                if ppp==0:
+                    print("无法产生环路", move_x, move_y, route_i[(num + 1) % 3])
+                    print("route ", route_2)
+                    print("active", active_point)
+                    return False
+
+
+            num+=1
+        '''数字换位置'''
+        value_fix = route_2.index(po2)
+        value_move = route_2.index(po3)
+        weiyi=value_fix-value_move
+        map_new_2= self.map_new[:]
+        print("最终route：",route_2,"位移：",weiyi)
+        for pos in range(len(route_2)):
+            po_fix=route_2[(pos+weiyi)%len(route_2)]
+            po_move = route_2[pos]
+            map_new_2[po_fix[0]+po_fix[1]*code_format]= self.map_new[po_move[0] + po_move[1] * code_format]
+        self.map_new=map_new_2[:]
+        self.route.append(route_2)
+        del self.active_point_ini[0]
+        return True
+
+
+                #if move_y <  and
+                #if (route_i[(num+1)%3][0]-move_x)*(route_i[(num+2)%3][0]-move_x)>=0:
+                #if (route_i[(num+1)%3][1]-move_y)/(route_i[(num+1)%3][0]-move_x)>(route_i[(num+2)%3][1]-move_y)/(route_i[(num+2)%3][0]-move_x):
+                    #
+
+
+
     def link_search(self):
-        pass
+        #[x,y]=self.root_node.pos
+        #fix_point=[]
+        #active_point=[]
+        #map_new=[]
+        #link_route=[]
+        self.fix_point = []
+        self.active_point_ini = []
+        for i in range(len(success_shape)):
+            self.map_new.append(self.init_map[i])
+            if self.init_map[i]==success_shape[i]:
+                self.fix_point.append([i%code_format,i//code_format])
+            else:self.active_point_ini.append([i%code_format,i//code_format])
+        while self.map_new!=success_shape and self.build_route():
+            print("next point")
+            for i in range(code_format):
+                print(self.map_new[i*code_format:(i+1)*code_format])
+            self.fix_point=[]
+            self.active_point_ini=[]
+            for i in range(len(success_shape)):
+                if self.map_new[i] == success_shape[i]:
+                    self.fix_point.append([i % code_format, i // code_format])
+                else:
+                    self.active_point_ini.append([i % code_format, i // code_format])
+        print("success")
+        for i in range(code_format):
+            print(self.map_new[i * code_format:(i + 1) * code_format])
+        print(self.route)
+
 
     def broad_search(self,node:tree_Node):
         if node.success==True:
@@ -351,8 +498,9 @@ class BinaryIndexTree(object):
 
 init_map1=[2,0,3,1,8,4,7,6,5]
 init_map12=[2,3,0,1,8,4,7,6,5]
-init_map2=[2,8,3,1,6,4,0,7,5]
+init_map2=[2,8,3,1,6,4,7,0,5]
 
+'''
 init_map15=[1,2,3,0,5,6,7,4,9,10,11,8,13,14,15,12]
 success_shape=[1,2,3,4,5,6,7,8,9,10,11,12,0,13,14,15]
 code_format=int(len(success_shape)**0.5)
@@ -362,13 +510,14 @@ ss3=BinaryIndexTree(init_map15,xp,yp)
 #ss33=BinaryIndexTree(init_map15,xp,yp)
 ss3.main_search("A")
 print("总长度：",len(ss3.success_path))
+'''
 
-'''
-ss1=BinaryIndexTree([2,0,3,1,8,4,7,6,5],1,0)
-ss11=BinaryIndexTree([2,0,3,1,8,4,7,6,5],1,0)
-ss1.main_search("broad")
-ss11.main_search("deep")
-'''
+ss1=BinaryIndexTree(init_map2,1,2)
+#ss11=BinaryIndexTree([2,0,3,1,8,4,7,6,5],1,0)
+#ss1.main_search("broad")
+#ss11.main_search("deep")
+ss1.main_search("link")
+''''''
 
 print("*****************deep*************************")
 '''
