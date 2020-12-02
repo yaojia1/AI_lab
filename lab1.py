@@ -217,12 +217,15 @@ class BinaryIndexTree(object):
         fix_point=self.fix_point[:]
 
         pass
-    def build_route(self):
+    def build_route(self,deep=0):
 
-        active_point=self.active_point_ini[:]
+        active_point = self.active_point_ini[deep:]
+        if deep>=0:
+            active_point.extend(self.active_point_ini[:deep])
         po1 = self.root_node.pos[:]
         active_point.remove(po1)
         if len(active_point)==1:
+
             #print(active_point[0],po1)
             if abs(po1[0]-active_point[0][0])+abs(po1[1]-active_point[0][1])==1:
                 self.map_new[po1[0]+po1[1]*code_format]=self.map_new[active_point[0][0]+active_point[0][1]*code_format]
@@ -236,13 +239,27 @@ class BinaryIndexTree(object):
                 return False
             else:
                 print("faild")
+
                 return False
 
         #active_point.remove(po1)
         po2=active_point[0]
-        del active_point[0]
+        if self.map_new[po2[0] + po2[1] * code_format]==success_shape[po1[1]*code_format+po1[0]]\
+                and abs(po1[0]-active_point[0][0])+abs(po1[1]-active_point[0][1])==1:
+            self.map_new[po1[0] + po1[1] * code_format] = self.map_new[
+                active_point[0][0] + active_point[0][1] * code_format]
+            self.map_new[active_point[0][0] + active_point[0][1] * code_format] = 0
+            # print(code_format,active_point[0],po1,self.map_new[po1[0]+po1[1]*code_format],self.map_new[active_point[0][0] + active_point[0][1] * 3])
+            self.route.append([po1, active_point[0]])
+            self.root_node.pos=active_point[0]
+            for i in range(code_format):
+                print(self.map_new[i * code_format:(i + 1) * code_format])
+            print("success")
+            # del self.active_point_ini[0]
+            return False
         i=self.map_new.index(success_shape[po2[1]*code_format+po2[0]])
         po3 = [i % code_format, i // code_format]
+        del active_point[0]
         active_point.remove(po3)
         route_i=[po1, po2, po3]
         #print("route point",route_i)
@@ -256,6 +273,10 @@ class BinaryIndexTree(object):
 
             move_x=route_i[num%3][0]
             move_y = route_i[num % 3][1]
+            #print(route_2,route_i)
+            if len(route_2) and route_2[len(route_2)-1]==route_i[num%3]:
+                num+=1
+                continue
             route_2.append([move_x, move_y])
             #print("selected point",route_i)
             #print("route point:", route_2)
@@ -350,7 +371,7 @@ class BinaryIndexTree(object):
                         print("无法产生环路", move_x, move_y, route_i[(num + 1) % 3])
                         print("route ", route_2)
                         print("active", active_point)
-                        return False
+                        return self.build_route(deep+1)
                 print(route_2,move_x,move_y,route_i[(num+1)%3])
                 print(move_x,route_i[(num+1)%3][0] , move_y, route_i[(num+1)%3][1])
             num+=1
@@ -394,7 +415,7 @@ class BinaryIndexTree(object):
             if self.init_map[i]==success_shape[i]:
                 self.fix_point.append([i%code_format,i//code_format])
             else:self.active_point_ini.append([i%code_format,i//code_format])
-        while self.map_new!=success_shape and self.build_route():
+        while  self.build_route() or self.map_new!=success_shape:
             for i in range(code_format):
                 print(self.map_new[i*code_format:(i+1)*code_format])
             self.fix_point=[]
